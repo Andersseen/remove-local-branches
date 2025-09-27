@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Git Branch Cleaner</title>
+    <style>
+      body {
+        font-family: var(--vscode-font-family);
+        color: var(--vscode-editor-foreground);
+        background-color: var(--vscode-editor-background);
+        padding: 20px;
+      }
+      h1 {
+        font-weight: 300;
+      }
+      .controls {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+      }
+      button {
+        border: 1px solid var(--vscode-button-border, transparent);
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+      #branch-list {
+        list-style: none;
+        padding: 0;
+      }
+      #branch-list li {
+        padding: 8px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      #branch-list li:hover {
+        background-color: var(--vscode-list-hoverBackground);
+      }
+      input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Local Branch Cleaner</h1>
+    <div class="controls">
+      <button id="select-all-btn">Select All</button>
+      <button id="delete-btn">Delete Selected</button>
+      <button id="refresh-btn">Refresh List</button>
+    </div>
+
+    <ul id="branch-list">
+      <p>Scanning for branches...</p>
+    </ul>
+
+    <script>
+      const vscode = acquireVsCodeApi();
+
+      const branchListEl = document.getElementById("branch-list");
+      const selectAllBtn = document.getElementById("select-all-btn");
+      const deleteBtn = document.getElementById("delete-btn");
+      const refreshBtn = document.getElementById("refresh-btn");
+
+      window.addEventListener("message", (event) => {
+        const message = event.data;
+        if (message.command === "updateBranches") {
+          renderBranchList(message.branches);
+        }
+      });
+
+      function renderBranchList(branches) {
+        branchListEl.innerHTML = "";
+        if (branches.length === 0) {
+          branchListEl.innerHTML = "<p>No branches to clean up!</p>";
+          return;
+        }
+
+        branches.forEach((branch) => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+                    <input type="checkbox" data-branch-name="${branch}">
+                    <label>${branch}</label>
+                `;
+          branchListEl.appendChild(li);
+        });
+      }
+
+      selectAllBtn.addEventListener("click", () => {
+        const checkboxes = document.querySelectorAll(
+          '#branch-list input[type="checkbox"]'
+        );
+        const shouldSelectAll = Array.from(checkboxes).some(
+          (cb) => !cb.checked
+        );
+        checkboxes.forEach((cb) => (cb.checked = shouldSelectAll));
+        selectAllBtn.textContent = shouldSelectAll
+          ? "Deselect All"
+          : "Select All";
+      });
+
+      deleteBtn.addEventListener("click", () => {
+        const selectedCheckboxes = document.querySelectorAll(
+          "#branch-list input:checked"
+        );
+        const branchesToDelete = Array.from(selectedCheckboxes).map(
+          (cb) => cb.dataset.branchName
+        );
+
+        if (branchesToDelete.length > 0) {
+          vscode.postMessage({
+            command: "deleteBranches",
+            branches: branchesToDelete,
+          });
+        }
+      });
+
+      refreshBtn.addEventListener("click", () => {
+        branchListEl.innerHTML = "<p>Refreshing...</p>";
+        vscode.postMessage({ command: "getBranches" });
+      });
+
+      vscode.postMessage({ command: "getBranches" });
+    </script>
+  </body>
+</html>

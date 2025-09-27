@@ -14,10 +14,28 @@
   "contributes": {
     "commands": [
       {
-        "command": "remove-local-branches.helloWorld",
-        "title": "Hello World"
+        "command": "remove-local-branches.showCleanerPage",
+        "title": "Git: Open Local Branch Cleaner"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "branch-cleaner-sidebar",
+          "title": "Git Branch Cleaner",
+          "icon": "$(git-pull-request-draft)"
+        }
+      ]
+    },
+    "views": {
+      "branch-cleaner-sidebar": [
+        {
+          "id": "branchCleanerActionsView",
+          "name": "Actions",
+          "type": "tree"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",
